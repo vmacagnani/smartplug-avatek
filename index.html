@@ -4,45 +4,7 @@
   <meta charset="UTF-8">
   <title>Consulta de Cliente no Agendor</title>
   <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      padding: 15px;
-      margin: 0;
-      color: #333;
-      font-size: 14px;
-    }
-    h2 {
-      font-size: 16px;
-      margin-top: 0;
-      color: #0073e6;
-      border-bottom: 2px solid #f2f2f2;
-      padding-bottom: 10px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
-    }
-    th, td {
-      padding: 8px;
-      border: 1px solid #e1e1e1;
-      text-align: left;
-      word-break: break-all;
-    }
-    th {
-      background-color: #f8f8f8;
-      width: 30%;
-      font-weight: 600;
-    }
-    #status {
-      margin-top: 20px;
-    }
-    .erro {
-      color: #d9534f;
-    }
-    .not-found {
-      color: #8a6d3b;
-    }
+    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;padding:15px;margin:0;color:#333;font-size:14px}h2{font-size:16px;margin-top:0;color:#0073e6;border-bottom:2px solid #f2f2f2;padding-bottom:10px}table{width:100%;border-collapse:collapse;margin-top:15px}th,td{padding:8px;border:1px solid #e1e1e1;text-align:left;word-break:break-all}th{background-color:#f8f8f8;width:30%;font-weight:600}#status{margin-top:20px}.erro{color:#d9534f}.not-found{color:#8a6d3b}
   </style>
 </head>
 <body>
@@ -51,10 +13,14 @@
   <div id="resultado"></div>
 
   <script>
+    function getEmailFromUrl() {
+      var params = new URLSearchParams(window.location.search);
+      return params.get('email');
+    }
+
     function buscarContato(email) {
       var statusDiv = document.getElementById('status');
       var resultadoDiv = document.getElementById('resultado');
-      
       var protocol = 'https';
       var domain = 'agendor-smartplug-api.onrender.com';
       var path = '/api/contato?email=' + encodeURIComponent(email);
@@ -67,10 +33,8 @@
         })
         .then(function(data) {
           statusDiv.style.display = 'none';
-          
           var orgName = data.organization ? data.organization.name : 'N/A';
           var phone = data.contact ? (data.contact.whatsapp || data.contact.mobile || 'N/A') : 'N/A';
-
           resultadoDiv.innerHTML =
             '<table>' +
               '<tr><th>Nome</th><td>' + (data.name || 'N/A') + '</td></tr>' +
@@ -92,10 +56,9 @@
     }
 
     function init() {
-      var emailPlaceholder = '{{user.email}}';
-      
-      if (emailPlaceholder && emailPlaceholder.indexOf('@') > -1) {
-        buscarContato(emailPlaceholder);
+      var emailFromUrl = getEmailFromUrl();
+      if (emailFromUrl && emailFromUrl.indexOf('@') > -1) {
+        buscarContato(emailFromUrl);
       } else {
         var statusDiv = document.getElementById('status');
         statusDiv.textContent = 'Email do cliente não disponível.';
