@@ -2,117 +2,216 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Consulta de Cliente no Agendor</title>
+  <title>Cliente no Agendor</title>
   <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      padding: 15px;
-      margin: 0;
-      color: #333;
-      font-size: 14px;
-    }
-    h2 {
-      font-size: 16px;
-      margin-top: 0;
-      color: #0073e6;
-      border-bottom: 2px solid #f2f2f2;
-      padding-bottom: 10px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
-    }
-    th, td {
-      padding: 8px;
-      border: 1px solid #e1e1e1;
-      text-align: left;
-      word-break: break-all;
-    }
-    th {
-      background-color: #f8f8f8;
-      width: 30%;
-      font-weight: 600;
-    }
-    #status {
-      margin-top: 20px;
-    }
-    .erro {
-      color: #d9534f;
-    }
-    .not-found {
-      color: #8a6d3b;
-    }
+    body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;padding:15px;margin:0;color:#333;font-size:14px}
+    h2,h3{font-size:16px;margin-top:0;color:#0073e6;border-bottom:2px solid #f2f2f2;padding-bottom:10px}
+    h3{font-size:15px;color:#333;border-color:#eee}
+    table{width:100%;border-collapse:collapse;margin-top:15px}
+    th,td{padding:8px;border:1px solid #e1e1e1;text-align:left;word-break:break-all}
+    th{background-color:#f8f8f8;width:30%;font-weight:600}
+    .hidden{display:none}
+    .form-group{margin-bottom:10px}
+    .form-group label{display:block;margin-bottom:5px;font-weight:600}
+    .form-group input{width:95%;padding:8px;border:1px solid #ccc;border-radius:4px}
+    .btn{background-color:#0073e6;color:white;padding:10px 15px;border:none;border-radius:4px;cursor:pointer;font-size:14px;margin-right:5px;}
+    .btn-secondary{background-color:#6c757d;}
+    .btn:hover{opacity:0.9}
+    .btn:disabled{background-color:#ccc;cursor:not-allowed}
+    .feedback{font-weight:bold;margin-top:10px;padding:8px;border-radius:4px}
+    .erro{color:#d9534f;background-color:#f8d7da;}
+    .success{color:#155724;background-color:#d4edda;}
   </style>
 </head>
 <body>
-  <h2>Cliente no Agendor</h2>
-  <div id="status">Buscando dados...</div>
-  <div id="resultado"></div>
+  <!-- View de Carregamento -->
+  <div id="loader-view">
+    <h2>Cliente no Agendor</h2>
+    <p>Buscando dados...</p>
+  </div>
+
+  <!-- View Principal (Exibição ou Ações) -->
+  <div id="main-view" class="hidden">
+    <h2>
+      Cliente no Agendor
+      <button id="reload-btn" class="btn btn-secondary" style="float:right; padding: 5px 10px; font-size: 12px;">Recarregar</button>
+    </h2>
+    <div id="content"></div>
+  </div>
+
+  <!-- View para Criar Empresa -->
+  <div id="create-company-view" class="hidden">
+    <h3>Cadastrar Nova Empresa</h3>
+    <form id="company-form">
+        <div class="form-group">
+            <label for="company-name">Nome da Empresa</label>
+            <input type="text" id="company-name" required>
+        </div>
+        <button type="submit" class="btn">Salvar Empresa</button>
+        <button type="button" class="btn btn-secondary" onclick="showMainView()">Cancelar</button>
+    </form>
+    <div id="company-feedback" class="feedback"></div>
+  </div>
+
+  <!-- View para Criar Pessoa -->
+  <div id="create-person-view" class="hidden">
+    <h3>Cadastrar Nova Pessoa</h3>
+    <form id="person-form">
+        <div class="form-group">
+            <label for="person-name">Nome</label><input type="text" id="person-name" required>
+        </div>
+        <div class="form-group">
+            <label for="person-email">Email</label><input type="email" id="person-email" required>
+        </div>
+        <div class="form-group">
+            <label for="person-phone">Telefone</label><input type="text" id="person-phone">
+        </div>
+        <div class="form-group">
+            <label for="person-company">Empresa (nome exato)</label><input type="text" id="person-company">
+        </div>
+        <button type="submit" class="btn">Salvar Pessoa</button>
+        <button type="button" class="btn btn-secondary" onclick="showMainView()">Cancelar</button>
+    </form>
+    <div id="person-feedback" class="feedback"></div>
+  </div>
 
   <script>
-    function getEmailFromUrl() {
-      var params = new URLSearchParams(window.location.search);
-      return params.get('email');
+    // --- URLs e Elementos ---
+    var API_BASE_URL = 'https://agendor-smartplug-api.onrender.com/api';
+    var VIEWS = {
+        loader: document.getElementById('loader-view'),
+        main: document.getElementById('main-view'),
+        createCompany: document.getElementById('create-company-view'),
+        createPerson: document.getElementById('create-person-view'),
+    };
+    var mainContent = document.getElementById('content');
+    var urlParams = {};
+
+    // --- Funções de Controle de View ---
+    function showView(viewName) {
+        Object.keys(VIEWS).forEach(function(key) { VIEWS[key].classList.add('hidden'); });
+        if (VIEWS[viewName]) VIEWS[viewName].classList.remove('hidden');
+    }
+    function showMainView() { showView('main'); }
+    function showCreateCompanyForm() { showView('createCompany'); }
+    function showCreatePersonForm() { 
+        document.getElementById('person-name').value = urlParams.name || '';
+        document.getElementById('person-email').value = urlParams.email || '';
+        showView('createPerson');
     }
 
-    function buscarContato(email) {
-      var statusDiv = document.getElementById('status');
-      var resultadoDiv = document.getElementById('resultado');
-      
-      var protocol = 'https';
-      var domain = 'agendor-smartplug-api.onrender.com';
-      var path = '/api/contato?email=' + encodeURIComponent(email);
-      var apiUrl = protocol + '://' + domain + path;
+    // --- Funções de Renderização ---
+    function renderContactData(data) {
+        var name = data.name, email = data.email, organization = data.organization, contact = data.contact, ownerUser = data.ownerUser, role = data.role;
+        mainContent.innerHTML = 
+            '<table>' +
+                '<tr><th>Nome</th><td>' + (name || 'N/A') + '</td></tr>' +
+                '<tr><th>Email</th><td>' + (email || 'N/A') + '</td></tr>' +
+                '<tr><th>Telefone</th><td>' + (contact && (contact.whatsapp || contact.mobile) || 'N/A') + '</td></tr>' +
+                '<tr><th>Empresa</th><td>' + (organization && organization.name || 'N/A') + '</td></tr>' +
+                '<tr><th>Cargo</th><td>' + (role || 'N/A') + '</td></tr>' +
+                '<tr><th>Vendedor</th><td>' + (ownerUser && ownerUser.name || 'N/A') + '</td></tr>' +
+            '</table>';
+    }
+    function renderNotFound() {
+        mainContent.innerHTML = 
+            '<p>Cliente não encontrado no Agendor.</p>' +
+            '<button class="btn" onclick="showCreateCompanyForm()">Cadastrar Empresa</button>' +
+            '<button class="btn" onclick="showCreatePersonForm()">Cadastrar Pessoa</button>';
+    }
 
-      fetch(apiUrl)
+    // --- Lógica da API (Reescrita com .then/.catch para compatibilidade) ---
+    function fetchContact(email) {
+        fetch(API_BASE_URL + '/contato?email=' + encodeURIComponent(email))
+            .then(function(response) {
+                showView('main'); // Mostra a view principal assim que a resposta começa a chegar
+                if (response.status === 404) {
+                    renderNotFound();
+                } else if (response.ok) {
+                    return response.json().then(renderContactData);
+                } else {
+                    throw new Error('Erro na API');
+                }
+            })
+            .catch(function(error) {
+                mainContent.innerHTML = '<div class="feedback erro">Não foi possível conectar à API.</div>';
+                showView('main');
+            });
+    }
+
+    function handleFormSubmit(event, formType) {
+        event.preventDefault();
+        var form = event.target;
+        var btn = form.querySelector('button[type="submit"]');
+        var feedbackDiv = document.getElementById(formType + '-feedback');
+        btn.disabled = true;
+        feedbackDiv.className = 'feedback';
+        feedbackDiv.textContent = 'Salvando...';
+
+        var endpoint, payload;
+        if (formType === 'company') {
+            endpoint = API_BASE_URL + '/criar-empresa';
+            payload = { name: document.getElementById('company-name').value };
+        } else {
+            endpoint = API_BASE_URL + '/criar-contato';
+            payload = {
+                name: document.getElementById('person-name').value,
+                email: document.getElementById('person-email').value,
+                phone: document.getElementById('person-phone').value,
+                organizationName: document.getElementById('person-company').value,
+            };
+        }
+
+        fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
         .then(function(response) {
-          if (!response.ok) { throw response; }
-          return response.json();
+            return response.json().then(function(data) {
+                if (!response.ok) throw new Error(data.error || 'Erro desconhecido');
+                return data;
+            });
         })
         .then(function(data) {
-          statusDiv.style.display = 'none';
-          
-          // --- INÍCIO DA MUDANÇA ---
-          var orgName = data.organization ? data.organization.name : 'N/A';
-          var phone = data.contact ? (data.contact.whatsapp || data.contact.mobile || 'N/A') : 'N/A';
-          var ownerName = data.ownerUser ? data.ownerUser.name : 'N/A'; // Pega o nome do vendedor
-          // --- FIM DA MUDANÇA ---
-
-          resultadoDiv.innerHTML =
-            '<table>' +
-              '<tr><th>Nome</th><td>' + (data.name || 'N/A') + '</td></tr>' +
-              '<tr><th>Email</th><td>' + (data.email || 'N/A') + '</td></tr>' +
-              '<tr><th>Telefone</th><td>' + phone + '</td></tr>' +
-              '<tr><th>Empresa</th><td>' + orgName + '</td></tr>' +
-              '<tr><th>Cargo</th><td>' + (data.role || 'N/A') + '</td></tr>' +
-              '<tr><th>Vendedor</th><td>' + ownerName + '</td></tr>' + // Adiciona a nova linha da tabela
-            '</table>';
+            feedbackDiv.className = 'feedback success';
+            feedbackDiv.textContent = (formType === 'company' ? 'Empresa' : 'Pessoa') + ' "' + data.name + '" salva com sucesso!';
+            form.reset();
         })
-        .catch(function(errorResponse) {
-           statusDiv.textContent = 'Erro ao buscar dados.';
-           statusDiv.className = 'erro';
-           if (errorResponse.json) {
-              errorResponse.json().then(function(errorData) {
-                resultadoDiv.innerHTML = '<p class="erro">' + (errorData.error || 'Não encontrado.') + '</p>';
-              });
-           }
+        .catch(function(error) {
+            feedbackDiv.className = 'feedback erro';
+            feedbackDiv.textContent = 'Erro: ' + error.message;
+        })
+        .finally(function() {
+            btn.disabled = false;
         });
     }
 
-    function init() {
-      var emailFromUrl = getEmailFromUrl();
-      
-      if (emailFromUrl && emailFromUrl.indexOf('@') > -1) {
-        buscarContato(emailFromUrl);
-      } else {
-        var statusDiv = document.getElementById('status');
-        statusDiv.textContent = 'Email do cliente não disponível na URL.';
-        statusDiv.className = 'not-found';
-      }
+    // --- Inicialização ---
+    function getUrlParams() {
+        var params = new URLSearchParams(window.location.search);
+        return {
+            email: params.get('email'),
+            name: params.get('name')
+        };
     }
 
-    window.onload = init;
+    function init() {
+        showView('loader');
+        urlParams = getUrlParams();
+        if (urlParams.email && urlParams.email.indexOf('@') > -1) {
+            fetchContact(urlParams.email);
+        } else {
+            VIEWS.loader.innerHTML = '<p>Email do cliente não disponível.</p>';
+        }
+    }
+
+    window.onload = function() {
+        init();
+        document.getElementById('reload-btn').addEventListener('click', init);
+        document.getElementById('company-form').addEventListener('submit', function(e) { handleFormSubmit(e, 'company'); });
+        document.getElementById('person-form').addEventListener('submit', function(e) { handleFormSubmit(e, 'person'); });
+    };
   </script>
 </body>
 </html>
