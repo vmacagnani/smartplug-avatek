@@ -13,7 +13,7 @@
     .hidden{display:none}
     .form-group{margin-bottom:10px}
     .form-group label{display:block;margin-bottom:5px;font-weight:600}
-    .form-group input{width:95%;padding:8px;border:1px solid #ccc;border-radius:4px}
+    .form-group input, .form-group select{width:95%;padding:8px;border:1px solid #ccc;border-radius:4px}
     .btn{background-color:#0073e6;color:white;padding:10px 15px;border:none;border-radius:4px;cursor:pointer;font-size:14px;margin-right:5px;}
     .btn-secondary{background-color:#6c757d;}
     .btn:hover{opacity:0.9}
@@ -47,8 +47,19 @@
             <label for="company-name">Nome da Empresa</label>
             <input type="text" id="company-name" required>
         </div>
+        <div class="form-group">
+            <label for="company-cnpj">CNPJ (Opcional)</label>
+            <input type="text" id="company-cnpj">
+        </div>
+        <div class="form-group">
+            <label for="company-owner">Responsável</label>
+            <select id="company-owner">
+                <option value="daniel.martins@avatek.com.br">Daniel Martins</option>
+                <option value="denise.grigorine@avatek.com.br">Denise Grigorine</option>
+            </select>
+        </div>
         <button type="submit" class="btn">Salvar Empresa</button>
-        <button type="button" class="btn btn-secondary" onclick="showMainView()">Cancelar</button>
+        <button type="button" class="btn btn-secondary" onclick="showMainView()">Voltar</button>
     </form>
     <div id="company-feedback" class="feedback"></div>
   </div>
@@ -69,14 +80,20 @@
         <div class="form-group">
             <label for="person-company">Empresa (nome exato)</label><input type="text" id="person-company">
         </div>
+        <div class="form-group">
+            <label for="person-owner">Responsável</label>
+            <select id="person-owner">
+                <option value="daniel.martins@avatek.com.br">Daniel Martins</option>
+                <option value="denise.grigorine@avatek.com.br">Denise Grigorine</option>
+            </select>
+        </div>
         <button type="submit" class="btn">Salvar Pessoa</button>
-        <button type="button" class="btn btn-secondary" onclick="showMainView()">Cancelar</button>
+        <button type="button" class="btn btn-secondary" onclick="showMainView()">Voltar</button>
     </form>
     <div id="person-feedback" class="feedback"></div>
   </div>
 
   <script>
-    // --- URLs e Elementos ---
     var API_BASE_URL = 'https://agendor-smartplug-api.onrender.com/api';
     var VIEWS = {
         loader: document.getElementById('loader-view'),
@@ -86,8 +103,8 @@
     };
     var mainContent = document.getElementById('content');
     var urlParams = {};
+    var lastCreatedCompany = null;
 
-    // --- Funções de Controle de View ---
     function showView(viewName) {
         Object.keys(VIEWS).forEach(function(key) { VIEWS[key].classList.add('hidden'); });
         if (VIEWS[viewName]) VIEWS[viewName].classList.remove('hidden');
@@ -100,7 +117,6 @@
         showView('createPerson');
     }
 
-    // --- Funções de Renderização ---
     function renderContactData(data) {
         var name = data.name, email = data.email, organization = data.organization, contact = data.contact, ownerUser = data.ownerUser, role = data.role;
         mainContent.innerHTML = 
@@ -120,11 +136,10 @@
             '<button class="btn" onclick="showCreatePersonForm()">Cadastrar Pessoa</button>';
     }
 
-    // --- Lógica da API (Reescrita com .then/.catch para compatibilidade) ---
     function fetchContact(email) {
         fetch(API_BASE_URL + '/contato?email=' + encodeURIComponent(email))
             .then(function(response) {
-                showView('main'); // Mostra a view principal assim que a resposta começa a chegar
+                showView('main');
                 if (response.status === 404) {
                     renderNotFound();
                 } else if (response.ok) {
@@ -151,7 +166,11 @@
         var endpoint, payload;
         if (formType === 'company') {
             endpoint = API_BASE_URL + '/criar-empresa';
-            payload = { name: document.getElementById('company-name').value };
+            payload = { 
+                name: document.getElementById('company-name').value,
+                cnpj: document.getElementById('company-cnpj').value,
+                ownerUserEmail: document.getElementById('company-owner').value
+            };
         } else {
             endpoint = API_BASE_URL + '/criar-contato';
             payload = {
@@ -159,6 +178,7 @@
                 email: document.getElementById('person-email').value,
                 phone: document.getElementById('person-phone').value,
                 organizationName: document.getElementById('person-company').value,
+                ownerUserEmail: document.getElementById('person-owner').value
             };
         }
 
@@ -177,6 +197,13 @@
             feedbackDiv.className = 'feedback success';
             feedbackDiv.textContent = (formType === 'company' ? 'Empresa' : 'Pessoa') + ' "' + data.name + '" salva com sucesso!';
             form.reset();
+            if (formType === 'company') {
+                lastCreatedCompany = data;
+                setTimeout(function() {
+                    document.getElementById('person-company').value = data.name;
+                    showCreatePersonForm();
+                }, 1500);
+            }
         })
         .catch(function(error) {
             feedbackDiv.className = 'feedback erro';
@@ -187,7 +214,6 @@
         });
     }
 
-    // --- Inicialização ---
     function getUrlParams() {
         var params = new URLSearchParams(window.location.search);
         return {
@@ -214,4 +240,4 @@
     };
   </script>
 </body>
-</html>
+</ht
