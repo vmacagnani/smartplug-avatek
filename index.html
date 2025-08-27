@@ -126,12 +126,22 @@
 
     function renderContactData(data) {
         var name = data.name, email = data.email, organization = data.organization, contact = data.contact, ownerUser = data.ownerUser, role = data.role;
+        
+        // --- INÍCIO DA MUDANÇA ---
+        var sector = 'N/A';
+        if (organization && organization.sector) {
+            // O campo 'sector' pode ser um objeto com 'name' ou apenas o nome
+            sector = organization.sector.name || organization.sector;
+        }
+        // --- FIM DA MUDANÇA ---
+
         mainContent.innerHTML = 
             '<table>' +
                 '<tr><th>Nome</th><td>' + (name || 'N/A') + '</td></tr>' +
                 '<tr><th>Email</th><td>' + (email || 'N/A') + '</td></tr>' +
                 '<tr><th>Telefone</th><td>' + (contact && (contact.whatsapp || contact.mobile) || 'N/A') + '</td></tr>' +
                 '<tr><th>Empresa</th><td>' + (organization && organization.name || 'N/A') + '</td></tr>' +
+                '<tr><th>Setor</th><td>' + sector + '</td></tr>' + // Adiciona a nova linha da tabela
                 '<tr><th>Cargo</th><td>' + (role || 'N/A') + '</td></tr>' +
                 '<tr><th>Vendedor</th><td>' + (ownerUser && ownerUser.name || 'N/A') + '</td></tr>' +
             '</table>';
@@ -248,4 +258,4 @@
     };
   </script>
 </body>
-</ht
+</html>
