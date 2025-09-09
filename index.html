@@ -41,14 +41,14 @@
 
   <!-- View para Criar Empresa -->
   <div id="create-company-view" class="hidden">
-    <h3>Registar Nova Empresa</h3>
+    <h3>Cadastrar Nova Empresa</h3>
     <form id="company-form">
         <div class="form-group">
             <label for="company-name">Nome da Empresa</label>
             <input type="text" id="company-name" required>
         </div>
         <div class="form-group">
-            <label for="company-cnpj">NIF (Opcional)</label>
+            <label for="company-cnpj">CNPJ (Opcional)</label>
             <input type="text" id="company-cnpj">
         </div>
         <div class="form-group">
@@ -86,7 +86,7 @@
             <label for="company-description">Descrição</label>
             <textarea id="company-description" rows="4"></textarea>
         </div>
-        <button type="submit" class="btn">Guardar Empresa</button>
+        <button type="submit" class="btn">Cadastrar Empresa</button>
         <button type="button" class="btn btn-secondary" onclick="showMainView()">Voltar</button>
     </form>
     <div id="company-feedback" class="feedback"></div>
@@ -94,7 +94,7 @@
 
   <!-- View para Criar Pessoa -->
   <div id="create-person-view" class="hidden">
-    <h3>Registar Nova Pessoa</h3>
+    <h3>Cadastrar Nova Pessoa</h3>
     <form id="person-form">
         <div class="form-group">
             <label for="person-name">Nome</label><input type="text" id="person-name" required>
@@ -115,7 +115,7 @@
                 <option value="denise.grigorine@avatek.com.br">Denise Grigorine</option>
             </select>
         </div>
-        <button type="submit" class="btn">Guardar Pessoa</button>
+        <button type="submit" class="btn">Cadastrar Pessoa</button>
         <button type="button" class="btn btn-secondary" onclick="showMainView()">Voltar</button>
     </form>
     <div id="person-feedback" class="feedback"></div>
