@@ -52,6 +52,10 @@
             <input type="text" id="company-cnpj">
         </div>
         <div class="form-group">
+            <label for="company-sector">Setor (Opcional)</label>
+            <input type="text" id="company-sector">
+        </div>
+        <div class="form-group">
             <label for="company-owner">Responsável</label>
             <select id="company-owner">
                 <option value="daniel.martins@avatek.com.br">Daniel Martins</option>
@@ -127,21 +131,18 @@
     function renderContactData(data) {
         var name = data.name, email = data.email, organization = data.organization, contact = data.contact, ownerUser = data.ownerUser, role = data.role;
         
-        // --- INÍCIO DA MUDANÇA ---
         var sector = 'N/A';
         if (organization && organization.sector) {
-            // O campo 'sector' pode ser um objeto com 'name' ou apenas o nome
             sector = organization.sector.name || organization.sector;
         }
-        // --- FIM DA MUDANÇA ---
-
+        
         mainContent.innerHTML = 
             '<table>' +
                 '<tr><th>Nome</th><td>' + (name || 'N/A') + '</td></tr>' +
                 '<tr><th>Email</th><td>' + (email || 'N/A') + '</td></tr>' +
                 '<tr><th>Telefone</th><td>' + (contact && (contact.whatsapp || contact.mobile) || 'N/A') + '</td></tr>' +
                 '<tr><th>Empresa</th><td>' + (organization && organization.name || 'N/A') + '</td></tr>' +
-                '<tr><th>Setor</th><td>' + sector + '</td></tr>' + // Adiciona a nova linha da tabela
+                '<tr><th>Setor</th><td>' + sector + '</td></tr>' +
                 '<tr><th>Cargo</th><td>' + (role || 'N/A') + '</td></tr>' +
                 '<tr><th>Vendedor</th><td>' + (ownerUser && ownerUser.name || 'N/A') + '</td></tr>' +
             '</table>';
@@ -186,6 +187,7 @@
             payload = { 
                 name: document.getElementById('company-name').value,
                 cnpj: document.getElementById('company-cnpj').value,
+                sector: document.getElementById('company-sector').value,
                 ownerUserEmail: document.getElementById('company-owner').value,
                 description: document.getElementById('company-description').value
             };
@@ -257,6 +259,5 @@
         document.getElementById('person-form').addEventListener('submit', function(e) { handleFormSubmit(e, 'person'); });
     };
   </script>
-  
 </body>
 </html>
