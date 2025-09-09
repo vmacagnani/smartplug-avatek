@@ -27,7 +27,7 @@
   <!-- View de Carregamento -->
   <div id="loader-view">
     <h2>Cliente no Agendor</h2>
-    <p>Buscando dados...</p>
+    <p>A procurar dados...</p>
   </div>
 
   <!-- View Principal (Exibição ou Ações) -->
@@ -41,18 +41,18 @@
 
   <!-- View para Criar Empresa -->
   <div id="create-company-view" class="hidden">
-    <h3>Cadastrar Nova Empresa</h3>
+    <h3>Registar Nova Empresa</h3>
     <form id="company-form">
         <div class="form-group">
             <label for="company-name">Nome da Empresa</label>
             <input type="text" id="company-name" required>
         </div>
         <div class="form-group">
-            <label for="company-cnpj">CNPJ (Opcional)</label>
+            <label for="company-cnpj">NIF (Opcional)</label>
             <input type="text" id="company-cnpj">
         </div>
         <div class="form-group">
-            <label for="company-sector">Setor (Opcional)</label>
+            <label for="company-sector">Setor</label>
             <select id="company-sector">
                 <option value="">Selecione um setor</option>
                 <option value="Meios de Pagamento">Meios de Pagamento</option>
@@ -60,6 +60,19 @@
                 <option value="Rastreamento">Rastreamento</option>
                 <option value="Segurança Eletrônica">Segurança Eletrônica</option>
                 <option value="Telemetria">Telemetria</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="company-category">Categoria</label>
+            <select id="company-category">
+                <option value="">Selecione uma categoria</option>
+                <option value="Bloqueado">Bloqueado</option>
+                <option value="Cliente ativo">Cliente ativo</option>
+                <option value="Cliente inativo">Cliente inativo</option>
+                <option value="Concorrente">Concorrente</option>
+                <option value="Fornecedor">Fornecedor</option>
+                <option value="Lead">Lead</option>
+                <option value="Parceiro">Parceiro</option>
             </select>
         </div>
         <div class="form-group">
@@ -73,7 +86,7 @@
             <label for="company-description">Descrição</label>
             <textarea id="company-description" rows="4"></textarea>
         </div>
-        <button type="submit" class="btn">Salvar Empresa</button>
+        <button type="submit" class="btn">Guardar Empresa</button>
         <button type="button" class="btn btn-secondary" onclick="showMainView()">Voltar</button>
     </form>
     <div id="company-feedback" class="feedback"></div>
@@ -81,7 +94,7 @@
 
   <!-- View para Criar Pessoa -->
   <div id="create-person-view" class="hidden">
-    <h3>Cadastrar Nova Pessoa</h3>
+    <h3>Registar Nova Pessoa</h3>
     <form id="person-form">
         <div class="form-group">
             <label for="person-name">Nome</label><input type="text" id="person-name" required>
@@ -102,7 +115,7 @@
                 <option value="denise.grigorine@avatek.com.br">Denise Grigorine</option>
             </select>
         </div>
-        <button type="submit" class="btn">Salvar Pessoa</button>
+        <button type="submit" class="btn">Guardar Pessoa</button>
         <button type="button" class="btn btn-secondary" onclick="showMainView()">Voltar</button>
     </form>
     <div id="person-feedback" class="feedback"></div>
@@ -142,6 +155,10 @@
         if (organization && organization.sector) {
             sector = organization.sector.name || organization.sector;
         }
+        var category = 'N/A';
+        if (organization && organization.category) {
+            category = organization.category.name || organization.category;
+        }
         
         mainContent.innerHTML = 
             '<table>' +
@@ -150,6 +167,7 @@
                 '<tr><th>Telefone</th><td>' + (contact && (contact.whatsapp || contact.mobile) || 'N/A') + '</td></tr>' +
                 '<tr><th>Empresa</th><td>' + (organization && organization.name || 'N/A') + '</td></tr>' +
                 '<tr><th>Setor</th><td>' + sector + '</td></tr>' +
+                '<tr><th>Categoria</th><td>' + category + '</td></tr>' +
                 '<tr><th>Cargo</th><td>' + (role || 'N/A') + '</td></tr>' +
                 '<tr><th>Vendedor</th><td>' + (ownerUser && ownerUser.name || 'N/A') + '</td></tr>' +
             '</table>';
@@ -157,8 +175,8 @@
     function renderNotFound() {
         mainContent.innerHTML = 
             '<p>Cliente não encontrado no Agendor.</p>' +
-            '<button class="btn" onclick="showCreateCompanyForm()">Cadastrar Empresa</button>' +
-            '<button class="btn" onclick="showCreatePersonForm()">Cadastrar Pessoa</button>';
+            '<button class="btn" onclick="showCreateCompanyForm()">Registar Empresa</button>' +
+            '<button class="btn" onclick="showCreatePersonForm()">Registar Pessoa</button>';
     }
 
     function fetchContact(email) {
@@ -174,7 +192,7 @@
                 }
             })
             .catch(function(error) {
-                mainContent.innerHTML = '<div class="feedback erro">Não foi possível conectar à API.</div>';
+                mainContent.innerHTML = '<div class="feedback erro">Não foi possível ligar à API.</div>';
                 showView('main');
             });
     }
@@ -186,7 +204,7 @@
         var feedbackDiv = document.getElementById(formType + '-feedback');
         btn.disabled = true;
         feedbackDiv.className = 'feedback';
-        feedbackDiv.textContent = 'Salvando...';
+        feedbackDiv.textContent = 'A guardar...';
 
         var endpoint, payload;
         if (formType === 'company') {
@@ -195,6 +213,7 @@
                 name: document.getElementById('company-name').value,
                 cnpj: document.getElementById('company-cnpj').value,
                 sector: document.getElementById('company-sector').value,
+                category: document.getElementById('company-category').value,
                 ownerUserEmail: document.getElementById('company-owner').value,
                 description: document.getElementById('company-description').value
             };
@@ -222,7 +241,7 @@
         })
         .then(function(data) {
             feedbackDiv.className = 'feedback success';
-            feedbackDiv.textContent = (formType === 'company' ? 'Empresa' : 'Pessoa') + ' "' + data.name + '" salva com sucesso!';
+            feedbackDiv.textContent = (formType === 'company' ? 'Empresa' : 'Pessoa') + ' "' + data.name + '" guardada com sucesso!';
             form.reset();
             if (formType === 'company') {
                 lastCreatedCompany = data;
@@ -268,4 +287,3 @@
   </script>
 </body>
 </html>
-
